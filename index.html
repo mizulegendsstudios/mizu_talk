@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App de Posts</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main>
+        <h1>Mini-Posts</h1>
+
+        <!-- Sección de Autenticación -->
+        <section id="auth-section" class="hidden">
+            <h2 id="auth-title">Iniciar Sesión</h2>
+            <form id="auth-form">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Contraseña" required>
+                <button type="submit" id="auth-submit">Entrar</button>
+            </form>
+            <p id="toggle-auth">¿No tienes cuenta? Regístrate</p>
+        </section>
+
+        <!-- Sección de la App (para usuarios logueados) -->
+        <section id="app-section" class="hidden">
+            <div class="user-info">
+                <span id="user-email"></span>
+                <button id="logout-button">Cerrar Sesión</button>
+            </div>
+
+            <form id="post-form">
+                <textarea id="post-content" placeholder="¿Qué estás pensando?" maxlength="200" required></textarea>
+                <button type="submit">Publicar</button>
+            </form>
+
+            <div id="posts-container">
+                <h2>Posts Recientes</h2>
+                <div id="posts-list"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SDK de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <!-- Nuestro script -->
+    <script src="app.js"></script>
+</body>
+</html>
