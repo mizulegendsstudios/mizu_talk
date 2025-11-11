@@ -1,14 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ============= CONFIGURACIÓN ÚNICA =============
+    // Configuración simple y limpia
     const config = {
-        emojiSize: '4.5rem', // Tamaño fijo grande para todos
+        emojiSize: '4.5rem', // Tamaño fijo grande
         emojis: ['😀', '😎', '🌟', '🎨', '🚀', '💡', '🌈', '🎉', '🌺', '🍕', '🎮', '🎵', '🌸', '🦄', '🍀', '🌙', '☀️', '⭐', '🌊', '🔥'],
-        animationDuration: { min: 35, max: 50 }, // Movimientos muy lentos
-        opacity: 0.25, // Opacidad fija baja para no distraer
-        glowColor: 'rgba(255, 215, 0, 0.9)' // Color dorado para glow
+        animationDuration: { min: 40, max: 60 }, // Caída muy lenta
+        opacity: 0.25 // Opacidad constante
     };
 
-    // ============= ESTILOS CSS =============
+    // Estilos CSS mínimos
     const style = document.createElement('style');
     style.textContent = `
         .emoji-container {
@@ -25,80 +24,71 @@ document.addEventListener('DOMContentLoaded', () => {
         .emoji {
             position: absolute;
             pointer-events: auto;
-            user-select: none;
             cursor: pointer;
             animation: emojiFall linear forwards;
-            will-change: transform;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: ${config.emojiSize};
             opacity: ${config.opacity};
+            transition: all 0.4s ease;
         }
         
         .emoji:hover {
             animation-play-state: paused;
-            transform: scale(1.15) !important;
-            filter: brightness(1.4) drop-shadow(0 0 20px ${config.glowColor}) !important;
-            opacity: 0.8 !important;
-            z-index: 100;
+            transform: scale(1.2) !important;
+            filter: brightness(1.5) drop-shadow(0 0 25px rgba(255, 215, 0, 0.9)) !important;
+            opacity: 0.9 !important;
         }
         
         @keyframes emojiFall {
             0% {
-                transform: translateY(-150px) translateX(0) rotate(0deg);
+                transform: translateY(-150px) rotate(0deg);
             }
             100% {
-                transform: translateY(calc(100vh + 150px)) translateX(var(--drift)) rotate(360deg);
+                transform: translateY(calc(100vh + 150px)) rotate(360deg);
             }
         }
     `;
     document.head.appendChild(style);
 
-    // ============= CONTENEDOR =============
+    // Contenedor
     const emojiContainer = document.createElement('div');
     emojiContainer.className = 'emoji-container';
     document.body.appendChild(emojiContainer);
 
-    // ============= CREAR EMOJI =============
+    // Crear un emoji
     function createEmoji() {
         const emoji = document.createElement('div');
         emoji.className = 'emoji';
         emoji.textContent = config.emojis[Math.floor(Math.random() * config.emojis.length)];
 
-        // Duración lenta y constante
+        // Duración lenta aleatoria
         const duration = Math.random() * (config.animationDuration.max - config.animationDuration.min) + config.animationDuration.min;
         emoji.style.animationDuration = `${duration}s`;
 
-        // Posición horizontal aleatoria (full width)
+        // Posición horizontal aleatoria (toda la pantalla)
         emoji.style.left = `${Math.random() * 100}%`;
 
-        // Desplazamiento lateral sutil
-        const drift = (Math.random() - 0.5) * 80; // -40px a 40px máximo
-        emoji.style.setProperty('--drift', `${drift}px`);
-
-        // Delay aleatorio para aparición escalonada
+        // Delay escalonado
         emoji.style.animationDelay = `${Math.random() * 5}s`;
 
-        // Efecto clic
+        // Efecto clic: desaparece
         emoji.addEventListener('click', function() {
-            this.style.animation = 'none';
-            this.style.transition = 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            this.style.transition = 'all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
             this.style.transform = 'scale(1.8) rotate(720deg)';
             this.style.opacity = '0';
-            setTimeout(() => this.remove(), 600);
+            setTimeout(() => this.remove(), 500);
         });
 
         emojiContainer.appendChild(emoji);
 
-        // Auto-limpieza
+        // Auto-limpiar
         setTimeout(() => emoji.remove(), (duration + 5) * 1000);
     }
 
-    // ============= INICIALIZAR =============
-    // 25 emojis iniciales con delay escalonado
-    for (let i = 0; i < 25; i++) {
-        setTimeout(createEmoji, i * 300);
+    // Inicializar
+    for (let i = 0; i < 20; i++) {
+        setTimeout(createEmoji, i * 250);
     }
 
-    // Nuevo emoji cada 3 segundos
+    // Continuar creando emojis
     setInterval(createEmoji, 3000);
 });
