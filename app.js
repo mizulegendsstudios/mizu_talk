@@ -2,8 +2,7 @@
 // Reemplaza con tu URL y tu clave anónima de Supabase
 const SUPABASE_URL = 'https://vicmgzclxyfjrlzgasqn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY21nemNseHlmanJsemdhc3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDA5ODAsImV4cCI6MjA3ODM3Njk4MH0.CuCN5Zd-tGlSlMN0amFN4hh_LwCioVrL0RGse7r0oCo';
-
-const supabase = client.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2. Referencias a elementos del DOM
 const authSection = document.getElementById('auth-section');
