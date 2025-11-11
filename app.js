@@ -1,14 +1,13 @@
-// 1. Configuración e inicialización (usar nombre distinto para evitar colisión)
+// Configuración e inicialización
 const SUPABASE_URL = 'https://vicmgzclxyfjrlzgasqn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY21nemNseHlmanJsemdhc3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDA5ODAsImV4cCI6MjA3ODM3Njk4MH0.CuCN5Zd-tGlSlMN0amFN4hh_LwCioVrL0RGse7r0oCo';
 
-// Comprobar que el SDK global esté cargado
 if (!window.supabase) {
-  console.error('El SDK de Supabase no está cargado. Asegúrate de incluir el script CDN antes de app.js');
+  console.error('El SDK de Supabase no está cargado. Incluye el script CDN antes de app.js');
 }
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 2. Referencias DOM
+// DOM
 const authSection = document.getElementById('auth-section');
 const appSection = document.getElementById('app-section');
 const authForm = document.getElementById('auth-form');
@@ -24,31 +23,30 @@ const logoutButton = document.getElementById('logout-button');
 let isSignUpMode = false;
 let currentUser = null;
 
-// 3. Procesar tokens del hash al inicio (robusto)
+// URL de redirect exacta que debe coincidir con Redirect URLs en Supabase
+const EMAIL_REDIRECT_TO = 'https://mizulegendsstudios.github.io/mizu_talk';
+
+// Procesar tokens en el hash al inicio (intenta setSession y limpia la URL)
 (async function processAuthHashAtStartup() {
   try {
     const hash = window.location.hash || '';
     if (hash.includes('access_token=')) {
-      // Intento 1: usar getSessionFromUrl (si está disponible en la versión del SDK incluida)
-      if (supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.getSessionFromUrl === 'function') {
+      // Intento con getSessionFromUrl si está disponible
+      if (supabaseClient.auth && typeof supabaseClient.auth.getSessionFromUrl === 'function') {
         try {
           const result = await supabaseClient.auth.getSessionFromUrl({ storeSession: true });
-          if (result?.error) {
-            console.warn('getSessionFromUrl error:', result.error);
-          } else {
-            console.info('Session from getSessionFromUrl:', result.data?.session);
-          }
+          if (result?.error) console.warn('getSessionFromUrl error:', result.error);
         } catch (err) {
           console.warn('getSessionFromUrl threw:', err);
         }
       }
 
-      // Intento 2: fallback manual parse + setSession (para versiones que no exponen getSessionFromUrl)
+      // Fallback manual: parsear tokens y setSession
       try {
         const params = new URLSearchParams(hash.substring(1));
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
-        if (access_token && refresh_token) {
+        if (access_token && refresh_token && supabaseClient.auth && typeof supabaseClient.auth.setSession === 'function') {
           const { data, error } = await supabaseClient.auth.setSession({
             access_token,
             refresh_token
@@ -60,12 +58,11 @@ let currentUser = null;
         console.warn('Fallback setSession threw:', err);
       }
 
-      // Limpiar la URL siempre (replaceState; si falla, replace para forzar recarga)
+      // Limpiar URL
       try {
         const cleanUrl = window.location.pathname + window.location.search;
         history.replaceState(null, '', cleanUrl);
         if (window.location.hash) {
-          // Último recurso: recargar sin hash
           window.location.replace(cleanUrl);
         }
       } catch (err) {
@@ -77,55 +74,54 @@ let currentUser = null;
   }
 })();
 
-// 4. Manejo de autenticación
+// Manejo de autenticación (registro / login)
 async function handleAuth(event) {
   event.preventDefault();
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
 
   if (isSignUpMode) {
-    const { data, error } = await supabaseClient.auth.signUp({ 
-      email, 
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
       password,
-      options: { emailRedirectTo: window.location.origin }
+      options: { emailRedirectTo: EMAIL_REDIRECT_TO } // <-- aquí forzamos la URL correcta
     });
-    
+
     if (error) {
       alert(error.message);
     } else {
       authTitle.textContent = 'Verifica tu correo';
       authForm.innerHTML = `
-        <p>Te hemos enviado un correo de verificación. Por favor, revisa tu bandeja de entrada y sigue las instrucciones.</p>
+        <p>Te hemos enviado un correo de verificación a <strong>${escapeHtml(email)}</strong>. Revisa tu bandeja y la carpeta de spam.</p>
         <button type="button" id="back-to-login">Volver al inicio de sesión</button>
       `;
-      
       document.getElementById('back-to-login').addEventListener('click', () => {
         isSignUpMode = false;
-        authTitle.textContent = 'Iniciar Sesión';
-        authForm.innerHTML = `
-          <input type="email" id="email" placeholder="Email" required>
-          <input type="password" id="password" placeholder="Contraseña" required>
-          <button type="submit" id="auth-submit">Entrar</button>
-        `;
-        toggleAuth.textContent = '¿No tienes cuenta? Regístrate';
-        
-        // Volver a añadir los event listeners
-        document.getElementById('auth-submit').addEventListener('click', handleAuth);
-        authForm.addEventListener('submit', handleAuth);
+        renderAuthForm();
       });
     }
   } else {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) alert(error.message);
-    // Si inicia correctamente, el listener de estado de auth actualizará la UI
+    // onAuthStateChange actualizará la UI cuando la sesión cambie
   }
 }
 
 function toggleAuthMode() {
   isSignUpMode = !isSignUpMode;
+  renderAuthForm();
+}
+
+function renderAuthForm() {
   authTitle.textContent = isSignUpMode ? 'Registrarse' : 'Iniciar Sesión';
   authSubmit.textContent = isSignUpMode ? 'Crear Cuenta' : 'Entrar';
   toggleAuth.textContent = isSignUpMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
+  authForm.innerHTML = `
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Contraseña" required>
+    <button type="submit" id="auth-submit">${isSignUpMode ? 'Crear Cuenta' : 'Entrar'}</button>
+  `;
+  document.getElementById('auth-submit').addEventListener('click', handleAuth);
 }
 
 async function handleLogout() {
@@ -133,49 +129,48 @@ async function handleLogout() {
   if (error) alert(error.message);
 }
 
-// 5. Manejo de posts
+// Posts
 async function createPost(event) {
   event.preventDefault();
   const content = postContent.value;
-
   if (!content.trim()) return;
 
   const { error } = await supabaseClient
-      .from('posts')
-      .insert({ content, user_id: currentUser.id });
+    .from('posts')
+    .insert({ content, user_id: currentUser.id });
 
   if (error) {
-      console.error('Error al crear post:', error);
-      alert('No se pudo publicar.');
+    console.error('Error al crear post:', error);
+    alert('No se pudo publicar.');
   } else {
-      postContent.value = '';
-      fetchPosts();
+    postContent.value = '';
+    fetchPosts();
   }
 }
 
 async function fetchPosts() {
   const { data, error } = await supabaseClient
-      .from('posts')
-      .select('content, created_at, user_id')
-      .order('created_at', { ascending: false });
+    .from('posts')
+    .select('content, created_at, user_id')
+    .order('created_at', { ascending: false });
 
   if (error) {
-      console.error('Error al obtener posts:', error);
+    console.error('Error al obtener posts:', error);
   } else {
-      postsList.innerHTML = '';
-      data.forEach(post => {
-          const postElement = document.createElement('div');
-          postElement.classList.add('post');
-          postElement.innerHTML = `
-              <p class="post-content">${escapeHtml(post.content)}</p>
-              <p class="post-meta">Por: ${post.user_id} | ${formatDate(post.created_at)}</p>
-          `;
-          postsList.appendChild(postElement);
-      });
+    postsList.innerHTML = '';
+    data.forEach(post => {
+      const postElement = document.createElement('div');
+      postElement.classList.add('post');
+      postElement.innerHTML = `
+        <p class="post-content">${escapeHtml(post.content)}</p>
+        <p class="post-meta">Por: ${post.user_id} | ${formatDate(post.created_at)}</p>
+      `;
+      postsList.appendChild(postElement);
+    });
   }
 }
 
-// Pequeña función para evitar XSS al insertar texto
+// Utilidades
 function escapeHtml(unsafe) {
   if (!unsafe) return '';
   return unsafe
@@ -186,24 +181,20 @@ function escapeHtml(unsafe) {
     .replaceAll("'", '&#039;');
 }
 
-// 6. Formato de fechas
 function formatDate(dateString) {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
-  
   if (diffMins < 1) return 'hace un momento';
   if (diffMins < 60) return `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
-  
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
-  
   const diffDays = Math.floor(diffHours / 24);
   return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
 }
 
-// 7. UI update
+// UI update
 function updateUI(user) {
   currentUser = user;
   if (user) {
@@ -217,10 +208,10 @@ function updateUI(user) {
   }
 }
 
-// 8. Inicialización al cargar DOM
+// Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
-  // Ya intentamos procesar el hash en processAuthHashAtStartup()
-  // Ahora verificar la sesión actual desde el storage
+  renderAuthForm();
+
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     updateUI(session?.user ?? null);
@@ -230,15 +221,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// 9. Event listeners
-// Añadir listeners con precaución: el formulario puede ser reescrito en registro
+// Listeners
 authForm.addEventListener('submit', handleAuth);
 toggleAuth.addEventListener('click', toggleAuthMode);
 postForm.addEventListener('submit', createPost);
 logoutButton.addEventListener('click', handleLogout);
 
-// 10. Escuchar cambios de auth (mantener UI sincronizada)
-if (supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.onAuthStateChange === 'function') {
+// Escuchar cambios de auth
+if (supabaseClient.auth && typeof supabaseClient.auth.onAuthStateChange === 'function') {
   supabaseClient.auth.onAuthStateChange((event, session) => {
     console.log('Auth event:', event, session);
     updateUI(session?.user ?? null);
