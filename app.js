@@ -84,7 +84,7 @@ async function handleAuth(event) {
     const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: EMAIL_REDIRECT_TO } // <-- aquí forzamos la URL correcta
+      options: { emailRedirectTo: EMAIL_REDIRECT_TO }
     });
 
     if (error) {
@@ -151,7 +151,7 @@ async function createPost(event) {
 async function fetchPosts() {
   const { data, error } = await supabaseClient
     .from('posts')
-    .select('content, created_at, user_id')
+    .select('id, content, created_at, user_id')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -161,9 +161,19 @@ async function fetchPosts() {
     data.forEach(post => {
       const postElement = document.createElement('div');
       postElement.classList.add('post');
+      // Aseguramos data-id y data-type (post)
+      postElement.setAttribute('data-id', post.id);
+      postElement.setAttribute('data-type', 'post');
+
       postElement.innerHTML = `
         <p class="post-content">${escapeHtml(post.content)}</p>
         <p class="post-meta">Por: ${post.user_id} | ${formatDate(post.created_at)}</p>
+        <div class="acl-controls">
+          <input class="acl-target" placeholder="Target user UUID" />
+          <button class="acl-add">Agregar ACL</button>
+          <button class="acl-remove">Remover ACL</button>
+          <div class="acl-msg" aria-live="polite"></div>
+        </div>
       `;
       postsList.appendChild(postElement);
     });
@@ -236,3 +246,44 @@ if (supabaseClient.auth && typeof supabaseClient.auth.onAuthStateChange === 'fun
 } else {
   console.warn('onAuthStateChange no disponible en esta versión del SDK.');
 }
+
+// Delegación para botones ACL (usa window.__acl.manageAcl expuesto desde index.html)
+document.addEventListener('click', async (e) => {
+  if (e.target.matches('.acl-add') || e.target.matches('.acl-remove')) {
+    const isAdd = e.target.matches('.acl-add');
+    const container = e.target.closest('.post');
+    if (!container) return;
+    const id = container.dataset.id;
+    const target = container.dataset.type || 'post';
+    const input = container.querySelector('.acl-target');
+    const user_id = input?.value?.trim();
+    const msgEl = container.querySelector('.acl-msg');
+
+    if (!user_id) { 
+      if (msgEl) msgEl.textContent = 'Ingrese user UUID'; 
+      return; 
+    }
+
+    if (!window.__acl || typeof window.__acl.manageAcl !== 'function') {
+      if (msgEl) msgEl.textContent = 'Función ACL no disponible';
+      console.error('window.__acl.manageAcl no está disponible. ¿Cargaste src/logic/acl.js o el script inline en index.html?');
+      return;
+    }
+
+    try {
+      if (msgEl) msgEl.textContent = 'Procesando...';
+      const result = await window.__acl.manageAcl({ action: isAdd ? 'add' : 'remove', target, id, user_id });
+      if (msgEl) msgEl.textContent = 'OK';
+      console.log('manageAcl result', result);
+    } catch (err) {
+      console.error('manageAcl error', err);
+      if (err && err.status === 403) {
+        if (msgEl) msgEl.textContent = 'Solo el propietario puede modificar ACLs';
+      } else if (err && err.status === 401) {
+        if (msgEl) msgEl.textContent = 'No autenticado';
+      } else {
+        if (msgEl) msgEl.textContent = err?.message || 'Error';
+      }
+    }
+  }
+});
