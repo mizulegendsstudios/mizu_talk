@@ -267,9 +267,14 @@ button[type="submit"]:hover {
 /* Clase oculta con animación */
 .hidden {
     opacity: 0;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
     transform: scale(0.95);
+    visibility: hidden;
     pointer-events: none;
     transition: var(--transition);
+    overflow: hidden;
 }
 
 /* Scrollbar personalizada */
