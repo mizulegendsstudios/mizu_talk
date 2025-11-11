@@ -3,47 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App de Posts</title>
+    <title>Mi Página Moderna</title>
+    <!-- Enlaza a tu archivo CSS (ajusta el nombre si es diferente) -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- El contenedor de emojis se creará dinámicamente con JavaScript -->
+
     <main>
-        <h1>Mini-Posts</h1>
+        <h1>Bienvenido a Mi Página</h1>
+        <p>Este es un ejemplo de una página web moderna con un diseño glassmorphism y un fondo animado de emojis.</p>
 
-        <!-- Sección de Autenticación -->
-        <section id="auth-section" class="hidden">
-            <h2 id="auth-title">Iniciar Sesión</h2>
-            <form id="auth-form">
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="password" id="password" placeholder="Contraseña" required>
-                <button type="submit" id="auth-submit">Entrar</button>
-            </form>
-            <p id="toggle-auth">¿No tienes cuenta? Regístrate</p>
-        </section>
+        <!-- Sección de información de usuario -->
+        <div class="user-info">
+            <span>👤 Usuario Ejemplo</span>
+            <span>usuario@ejemplo.com</span>
+        </div>
 
-        <!-- Sección de la App (para usuarios logueados) -->
-        <section id="app-section" class="hidden">
-            <div class="user-info">
-                <span id="user-email"></span>
-                <button id="logout-button">Cerrar Sesión</button>
+        <!-- Formulario de ejemplo -->
+        <form>
+            <input type="text" placeholder="Tu nombre" required>
+            <textarea placeholder="Escribe un comentario..." required></textarea>
+            <button type="submit">Enviar Comentario</button>
+        </form>
+
+        <h2>Publicaciones Recientes</h2>
+
+        <!-- Ejemplo de un post -->
+        <article class="post">
+            <div class="post-content">
+                <p>¡El diseño web moderno es fascinante! Combinar estilos como glassmorphism con animaciones sutiles crea una experiencia de usuario única.</p>
             </div>
-
-            <form id="post-form">
-                <textarea id="post-content" placeholder="¿Qué estás pensando?" maxlength="200" required></textarea>
-                <button type="submit">Publicar</button>
-            </form>
-
-            <div id="posts-container">
-                <h2>Posts Recientes</h2>
-                <div id="posts-list"></div>
+            <div class="post-meta">
+                Publicado hace 5 minutos
             </div>
-        </section>
+        </article>
 
+        <!-- Otro ejemplo de post -->
+        <article class="post">
+            <div class="post-content">
+                <p>Los emojis en el fondo añaden un toque divertido y dinámico sin distraer del contenido principal. ¿No te parece genial?</p>
+            </div>
+            <div class="post-meta">
+                Publicado hace 1 hora
+            </div>
+        </article>
+
+        <!-- Elemento oculto de ejemplo -->
+        <div class="hidden">
+            <p>Este contenido está oculto por defecto.</p>
+        </div>
     </main>
 
-    <!-- SDK de Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <!-- Nuestro script -->
-    <script src="app.js"></script>
+    <!-- =================================================================== -->
+    <!-- ==                  MODIFICACIÓN CLAVE AQUÍ                     == -->
+    <!-- =================================================================== -->
+    <!-- Se agrega el script al final del body para asegurar que el DOM     -->
+    <!-- esté completamente cargado antes de ejecutar el código.           -->
+    <script src="src/animation/main_wallpaper.js"></script>
+    <!-- =================================================================== -->
+
 </body>
 </html>
