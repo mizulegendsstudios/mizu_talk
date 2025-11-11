@@ -1,31 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ============= CONFIGURACIÓN =============
+    // ============= CONFIGURACIÓN ÚNICA =============
     const config = {
-        // Cobertura horizontal: 'full', 'left', 'right', 'center'
-        coverage: 'full',
-        
-        // Densidad de emojis: 'low', 'medium', 'high'
-        density: 'medium',
-        
-        // Emojis disponibles
+        emojiSize: '4.5rem', // Tamaño fijo grande para todos
         emojis: ['😀', '😎', '🌟', '🎨', '🚀', '💡', '🌈', '🎉', '🌺', '🍕', '🎮', '🎵', '🌸', '🦄', '🍀', '🌙', '☀️', '⭐', '🌊', '🔥'],
-        
-        // Colores de glow (modo oscuro/claro)
-        glowColors: {
-            light: 'rgba(255, 255, 150, 0.6)',
-            dark: 'rgba(255, 200, 50, 0.8)'
-        }
+        animationDuration: { min: 35, max: 50 }, // Movimientos muy lentos
+        opacity: 0.25, // Opacidad fija baja para no distraer
+        glowColor: 'rgba(255, 215, 0, 0.9)' // Color dorado para glow
     };
-    
-    // ============= CONFIGURACIÓN DE DENSIDAD =============
-    const densitySettings = {
-        low: { initial: 8, interval: 2500, maxEmojis: 20 },
-        medium: { initial: 15, interval: 1500, maxEmojis: 35 },
-        high: { initial: 25, interval: 800, maxEmojis: 50 }
-    };
-    
-    const settings = densitySettings[config.density];
-    
+
     // ============= ESTILOS CSS =============
     const style = document.createElement('style');
     style.textContent = `
@@ -44,171 +26,79 @@ document.addEventListener('DOMContentLoaded', () => {
             position: absolute;
             pointer-events: auto;
             user-select: none;
-            animation-name: emojiFall;
-            animation-timing-function: linear;
-            animation-iteration-count: 1;
-            will-change: transform, opacity;
-            transition: filter 0.3s ease;
+            cursor: pointer;
+            animation: emojiFall linear forwards;
+            will-change: transform;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: ${config.emojiSize};
+            opacity: ${config.opacity};
         }
         
         .emoji:hover {
             animation-play-state: paused;
-            transform: scale(1.3) !important;
-            z-index: 1000;
-            filter: blur(0px) brightness(1.2) drop-shadow(0 0 20px var(--glow-color)) !important;
+            transform: scale(1.15) !important;
+            filter: brightness(1.4) drop-shadow(0 0 20px ${config.glowColor}) !important;
+            opacity: 0.8 !important;
+            z-index: 100;
         }
         
-        /* Animación principal con movimiento horizontal */
         @keyframes emojiFall {
             0% {
-                transform: translateY(-100px) translateX(0) rotate(0deg) scale(0.5);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-                transform: translateY(-50px) translateX(0) rotate(0deg) scale(1);
-            }
-            25% {
-                transform: translateY(25vh) translateX(var(--move-x-1)) rotate(90deg) scale(var(--scale));
-            }
-            50% {
-                transform: translateY(50vh) translateX(var(--move-x-2)) rotate(180deg) scale(var(--scale));
-            }
-            75% {
-                transform: translateY(75vh) translateX(var(--move-x-3)) rotate(270deg) scale(var(--scale));
-            }
-            90% {
-                opacity: 1;
+                transform: translateY(-150px) translateX(0) rotate(0deg);
             }
             100% {
-                transform: translateY(calc(100vh + 100px)) translateX(var(--move-x-4)) rotate(360deg) scale(0.5);
-                opacity: 0;
+                transform: translateY(calc(100vh + 150px)) translateX(var(--drift)) rotate(360deg);
             }
-        }
-        
-        /* Capas de profundidad (parallax) */
-        .emoji.layer-back {
-            animation-duration: calc(var(--duration) * 1.5) !important;
-            filter: blur(1px) brightness(0.6);
-        }
-        
-        .emoji.layer-front {
-            animation-duration: calc(var(--duration) * 0.7) !important;
-            filter: blur(0px) brightness(1.1);
         }
     `;
     document.head.appendChild(style);
-    
+
     // ============= CONTENEDOR =============
     const emojiContainer = document.createElement('div');
     emojiContainer.className = 'emoji-container';
     document.body.appendChild(emojiContainer);
-    
-    // ============= FUNCIONES DE UTILIDAD =============
-    function getRandomInRange(min, max) {
-        return Math.random() * (max - min) + min;
-    }
-    
-    function getCoverageRange() {
-        switch(config.coverage) {
-            case 'left': return { min: 0, max: 50 };
-            case 'right': return { min: 50, max: 100 };
-            case 'center': return { min: 25, max: 75 };
-            default: return { min: 0, max: 100 };
-        }
-    }
-    
-    // ============= CREACIÓN DE EMOJI =============
+
+    // ============= CREAR EMOJI =============
     function createEmoji() {
-        // Limite de emojis en pantalla
-        if (emojiContainer.children.length >= settings.maxEmojis) {
-            return;
-        }
-        
         const emoji = document.createElement('div');
         emoji.className = 'emoji';
-        
-        // Seleccionar emoji aleatorio
         emoji.textContent = config.emojis[Math.floor(Math.random() * config.emojis.length)];
-        
-        // Configuración de animación
-        const duration = getRandomInRange(15, 30);
-        const delay = getRandomInRange(0, 5);
-        
-        // Rango de cobertura horizontal
-        const range = getCoverageRange();
-        const leftPosition = getRandomInRange(range.min, range.max);
-        
-        // Movimiento horizontal (efecto viento) - valores aleatorios
-        const moveX1 = getRandomInRange(-50, 50);
-        const moveX2 = getRandomInRange(-100, 100);
-        const moveX3 = getRandomInRange(-150, 150);
-        const moveX4 = getRandomInRange(-200, 200);
-        
-        // Tamaño (aumentado para más impacto)
-        const size = getRandomInRange(1.5, 3.5);
-        
-        // Opacidad
-        const opacity = getRandomInRange(0.2, 0.6);
-        
-        // Escala para efecto 3D
-        const scale = getRandomInRange(0.6, 1.2);
-        
-        // Capa de profundidad (parallax)
-        const layerChance = Math.random();
-        if (layerChance < 0.2) {
-            emoji.classList.add('layer-back');
-        } else if (layerChance > 0.8) {
-            emoji.classList.add('layer-front');
-        }
-        
-        // Aplicar estilos usando CSS variables para mejor rendimiento
-        emoji.style.setProperty('--duration', `${duration}s`);
-        emoji.style.setProperty('--scale', scale);
-        emoji.style.setProperty('--move-x-1', `${moveX1}px`);
-        emoji.style.setProperty('--move-x-2', `${moveX2}px`);
-        emoji.style.setProperty('--move-x-3', `${moveX3}px`);
-        emoji.style.setProperty('--move-x-4', `${moveX4}px`);
-        
-        // Estilos directos
-        emoji.style.left = `${leftPosition}%`;
-        emoji.style.fontSize = `${size}rem`;
-        emoji.style.opacity = opacity;
+
+        // Duración lenta y constante
+        const duration = Math.random() * (config.animationDuration.max - config.animationDuration.min) + config.animationDuration.min;
         emoji.style.animationDuration = `${duration}s`;
-        emoji.style.animationDelay = `${delay}s`;
-        
-        // Detectar modo oscuro y aplicar glow
-        const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const glowColor = isDarkMode ? config.glowColors.dark : config.glowColors.light;
-        emoji.style.setProperty('--glow-color', glowColor);
-        emoji.style.filter = `blur(0.5px) drop-shadow(0 0 5px ${glowColor})`;
-        
-        // Añadir al contenedor
+
+        // Posición horizontal aleatoria (full width)
+        emoji.style.left = `${Math.random() * 100}%`;
+
+        // Desplazamiento lateral sutil
+        const drift = (Math.random() - 0.5) * 80; // -40px a 40px máximo
+        emoji.style.setProperty('--drift', `${drift}px`);
+
+        // Delay aleatorio para aparición escalonada
+        emoji.style.animationDelay = `${Math.random() * 5}s`;
+
+        // Efecto clic
+        emoji.addEventListener('click', function() {
+            this.style.animation = 'none';
+            this.style.transition = 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            this.style.transform = 'scale(1.8) rotate(720deg)';
+            this.style.opacity = '0';
+            setTimeout(() => this.remove(), 600);
+        });
+
         emojiContainer.appendChild(emoji);
-        
-        // Eliminar después de la animación
-        setTimeout(() => {
-            emoji.remove();
-        }, (duration + delay + 1) * 1000);
+
+        // Auto-limpieza
+        setTimeout(() => emoji.remove(), (duration + 5) * 1000);
     }
-    
-    // ============= INICIALIZACIÓN =============
-    // Crear emojis iniciales con delay escalonado
-    for (let i = 0; i < settings.initial; i++) {
-        setTimeout(createEmoji, i * 200);
+
+    // ============= INICIALIZAR =============
+    // 25 emojis iniciales con delay escalonado
+    for (let i = 0; i < 25; i++) {
+        setTimeout(createEmoji, i * 300);
     }
-    
-    // Crear emojis continuamente
-    setInterval(createEmoji, settings.interval);
-    
-    // ============= DETECCIÓN DE TEMA =============
-    function updateEmojiColors() {
-        const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const glowColor = isDarkMode ? config.glowColors.dark : config.glowColors.light;
-        
-        emojiContainer.style.setProperty('--glow-color', glowColor);
-    }
-    
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateEmojiColors);
-    updateEmojiColors();
+
+    // Nuevo emoji cada 3 segundos
+    setInterval(createEmoji, 3000);
 });
