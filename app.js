@@ -1,7 +1,12 @@
 // 1. Inicializar Supabase
 // Reemplaza con tu URL y tu clave anónima de Supabase
-const SUPABASE_URL = 'https://vicmgzclxyfjrlzgasqn.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY21nemNseHlmanJsemdhc3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDA5ODAsImV4cCI6MjA3ODM3Njk4MH0.CuCN5Zd-tGlSlMN0amFN4hh_LwCioVrL0RGse7r0oCo';
+const SUPABASE_URL = https://vicmgzclxyfjrlzgasqn.supabase.co;
+const SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY21nemNseHlmanJsemdhc3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDA5ODAsImV4cCI6MjA3ODM3Njk4MH0.CuCN5Zd-tGlSlMN0amFN4hh_LwCioVrL0RGse7r0oCo;
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- PUNTO CLAVE ---
+// Usamos el objeto global 'supabase' (del CDN) para crear nuestra instancia,
+// y la guardamos en una variable llamada 'supabaseClient'.
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2. Referencias a elementos del DOM
@@ -27,11 +32,13 @@ async function handleAuth(event) {
     const password = document.getElementById('password').value;
 
     if (isSignUpMode) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        // Usamos 'supabaseClient' aquí
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
         if (error) alert(error.message);
         else alert('Registro exitoso! Revisa tu email para confirmar.');
     } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        // Usamos 'supabaseClient' aquí
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) alert(error.message);
     }
 }
@@ -44,7 +51,8 @@ function toggleAuthMode() {
 }
 
 async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
+    // Usamos 'supabaseClient' aquí
+    const { error } = await supabaseClient.auth.signOut();
     if (error) alert(error.message);
 }
 
@@ -55,7 +63,8 @@ async function createPost(event) {
 
     if (!content.trim()) return;
 
-    const { error } = await supabase
+    // Usamos 'supabaseClient' aquí
+    const { error } = await supabaseClient
         .from('posts')
         .insert({ content, user_id: currentUser.id });
 
@@ -69,7 +78,8 @@ async function createPost(event) {
 }
 
 async function fetchPosts() {
-    const { data, error } = await supabase
+    // Usamos 'supabaseClient' aquí
+    const { data, error } = await supabaseClient
         .from('posts')
         .select('content, created_at, user_id')
         .order('created_at', { ascending: false });
@@ -111,6 +121,8 @@ postForm.addEventListener('submit', createPost);
 logoutButton.addEventListener('click', handleLogout);
 
 // 7. Comprobar el estado de la autenticación al cargar la página
-supabase.auth.onAuthStateChange((event, session) => {
+// --- ¡LA LÍNEA QUE ESTABA FALLANDO! ---
+// Usamos 'supabaseClient' aquí también.
+supabaseClient.auth.onAuthStateChange((event, session) => {
     updateUI(session?.user ?? null);
 });
