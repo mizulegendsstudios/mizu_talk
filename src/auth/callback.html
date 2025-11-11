@@ -1,18 +1,113 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Autenticando...</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Autenticando…</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+        Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f7fafc;
+      color: #111827;
+    }
+    .card {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+    }
+    .muted { color: #6b7280; font-size: 0.95rem; }
+    .error { color: #b91c1c; margin-top: 0.75rem; }
+  </style>
 </head>
 <body>
-    <p>Redirigiendo, por favor espera...</p>
-    <script>
-        // La URL del hash contiene los tokens de acceso (ej: #access_token=...)
-        const hash = window.location.hash;
+  <div class="card" role="main" aria-live="polite">
+    <h1>Autenticando…</h1>
+    <p class="muted">Redirigiendo a la aplicación. Si la redirección no ocurre automáticamente, pulsa el botón.</p>
+    <p id="status" class="muted">Procesando tokens...</p>
+    <div id="controls" style="margin-top:1rem; display:none;">
+      <button id="continueBtn">Continuar</button>
+    </div>
+    <p id="error" class="error" role="alert" style="display:none;"></p>
+  </div>
 
-        // Redirigimos al usuario a la página principal de la app,
-        // manteniendo el hash con los tokens.
-        window.location.href = '/mizu_talk/' + hash;
-    </script>
+  <script>
+    (function () {
+      // URL absoluta de tu app — debe coincidir exactamente con la Redirect URL en Supabase
+      const TARGET_APP_URL = 'https://mizulegendsstudios.github.io/mizu_talk';
+
+      const statusEl = document.getElementById('status');
+      const errorEl = document.getElementById('error');
+      const controlsEl = document.getElementById('controls');
+      const continueBtn = document.getElementById('continueBtn');
+
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+        statusEl.style.display = 'none';
+      }
+
+      // Obtén el hash (incluye el '#')
+      const hash = window.location.hash || '';
+
+      // Validaciones básicas
+      if (!TARGET_APP_URL) {
+        showError('Error de configuración: TARGET_APP_URL no está definida.');
+        return;
+      }
+
+      if (!hash) {
+        // Sin hash: puede ser que el proveedor no haya enviado tokens en el fragment.
+        // Reintentamos redirigir sin hash (solo por si acaso) y mostramos control manual.
+        statusEl.textContent = 'No se detectaron tokens en la URL. Redirigiendo de todas formas...';
+        controlsEl.style.display = 'block';
+        continueBtn.addEventListener('click', () => {
+          // Usamos replace para no crear historial adicional
+          window.location.replace(TARGET_APP_URL);
+        });
+
+        // Intento automático (reemplaza para limpiar la URL original)
+        setTimeout(() => {
+          try { window.location.replace(TARGET_APP_URL); } catch (e) { /* no-block */ }
+        }, 800);
+        return;
+      }
+
+      // Si hay hash, formamos la URL absoluta final
+      try {
+        // Aseguramos que TARGET_APP_URL no termine en '#' o espacios
+        const base = TARGET_APP_URL.replace(/#.*$/, '').trim();
+
+        // Construimos la URL final — el hash ya incluye #
+        const finalUrl = base + (hash.startsWith('#') ? hash : '#' + hash);
+
+        // Mostrar en UI (para depuración ligera)
+        statusEl.textContent = 'Redirigiendo a la aplicación...';
+
+        // Reemplaza la ubicación actual para mantener el historial limpio
+        window.location.replace(finalUrl);
+      } catch (err) {
+        console.error('Error durante la redirección:', err);
+        showError('No se pudo redirigir automáticamente. Puedes pulsar "Continuar" para intentar manualmente.');
+        controlsEl.style.display = 'block';
+        continueBtn.addEventListener('click', () => {
+          try {
+            window.location.replace(TARGET_APP_URL + (hash || ''));
+          } catch (e) {
+            showError('Error al intentar redirigir manualmente: ' + String(e));
+          }
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
