@@ -1,67 +1,156 @@
-// Configuración de Supabase
-const supabaseUrl = 'https://vicmgzclxyfjrlgasqn.supabase.co';
-const supabaseKey = 'tu-clave-anonima-de-supabase'; // Reemplaza con tu clave real
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+// 1. Inicializar Supabase
+// Reemplaza con tu URL y tu clave anónima de Supabase
+const SUPABASE_URL = 'https://vicmgzclxyfjrlzgasqn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY21nemNseHlmanJsemdhc3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDA5ODAsImV4cCI6MjA3ODM3Njk4MH0.CuCN5Zd-tGlSlMN0amFN4hh_LwCioVrL0RGse7r0oCo';
 
-// Elementos del DOM
+// --- ÚNICA Y CORRECTA DECLARACIÓN DEL CLIENTE DE SUPABASE ---
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 2. Referencias a elementos del DOM
 const authSection = document.getElementById('auth-section');
 const appSection = document.getElementById('app-section');
-const authTitle = document.getElementById('auth-title');
 const authForm = document.getElementById('auth-form');
+const authTitle = document.getElementById('auth-title');
 const authSubmit = document.getElementById('auth-submit');
 const toggleAuth = document.getElementById('toggle-auth');
-const userEmail = document.getElementById('user-email');
-const logoutButton = document.getElementById('logout-button');
 const postForm = document.getElementById('post-form');
 const postContent = document.getElementById('post-content');
 const postsList = document.getElementById('posts-list');
+const userEmailSpan = document.getElementById('user-email');
+const logoutButton = document.getElementById('logout-button');
 
-// Estado de la aplicación
-let isSignUp = false;
+let isSignUpMode = false;
 let currentUser = null;
 
-// Función para mostrar la sección de autenticación
-function showAuthSection() {
-    authSection.classList.remove('hidden');
-    appSection.classList.add('hidden');
+// 3. Función para procesar tokens en la URL
+async function processUrlTokens() {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+    
+    if (accessToken && refreshToken) {
+        try {
+            const { data, error } = await supabaseClient.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+            });
+            
+            if (error) throw error;
+            
+            // Limpiar la URL para remover los tokens
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            return data.session;
+        } catch (error) {
+            console.error('Error procesando tokens:', error);
+            return null;
+        }
+    }
+    return null;
 }
 
-// Función para mostrar la sección de la aplicación
-function showAppSection() {
-    authSection.classList.add('hidden');
-    appSection.classList.remove('hidden');
-}
+// 4. Manejo de Autenticación
+async function handleAuth(event) {
+    event.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-// Función para cargar posts
-async function loadPosts() {
-    try {
-        const { data, error } = await supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        postsList.innerHTML = '';
-        data.forEach(post => {
-            const postElement = document.createElement('article');
-            postElement.className = 'post';
-            postElement.innerHTML = `
-                <div class="post-content">
-                    <p>${post.content}</p>
-                </div>
-                <div class="post-meta">
-                    Publicado por ${post.user_email} • ${formatDate(post.created_at)}
-                </div>
-            `;
-            postsList.appendChild(postElement);
+    if (isSignUpMode) {
+        const { data, error } = await supabaseClient.auth.signUp({ 
+            email, 
+            password,
+            options: {
+                emailRedirectTo: window.location.origin
+            }
         });
-    } catch (error) {
-        console.error('Error al cargar posts:', error.message);
+        
+        if (error) {
+            alert(error.message);
+        } else {
+            // Mostrar mensaje de verificación
+            authTitle.textContent = 'Verifica tu correo';
+            authForm.innerHTML = `
+                <p>Te hemos enviado un correo de verificación. Por favor, revisa tu bandeja de entrada y sigue las instrucciones.</p>
+                <button type="button" id="back-to-login">Volver al inicio de sesión</button>
+            `;
+            
+            document.getElementById('back-to-login').addEventListener('click', () => {
+                isSignUpMode = false;
+                authTitle.textContent = 'Iniciar Sesión';
+                authForm.innerHTML = `
+                    <input type="email" id="email" placeholder="Email" required>
+                    <input type="password" id="password" placeholder="Contraseña" required>
+                    <button type="submit" id="auth-submit">Entrar</button>
+                `;
+                toggleAuth.textContent = '¿No tienes cuenta? Regístrate';
+                
+                // Volver a añadir los event listeners
+                document.getElementById('auth-submit').addEventListener('click', handleAuth);
+                authForm.addEventListener('submit', handleAuth);
+            });
+        }
+    } else {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
     }
 }
 
-// Función para formatear fecha
+function toggleAuthMode() {
+    isSignUpMode = !isSignUpMode;
+    authTitle.textContent = isSignUpMode ? 'Registrarse' : 'Iniciar Sesión';
+    authSubmit.textContent = isSignUpMode ? 'Crear Cuenta' : 'Entrar';
+    toggleAuth.textContent = isSignUpMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
+}
+
+async function handleLogout() {
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) alert(error.message);
+}
+
+// 5. Manejo de Posts
+async function createPost(event) {
+    event.preventDefault();
+    const content = postContent.value;
+
+    if (!content.trim()) return;
+
+    const { error } = await supabaseClient
+        .from('posts')
+        .insert({ content, user_id: currentUser.id });
+
+    if (error) {
+        console.error('Error al crear post:', error);
+        alert('No se pudo publicar.');
+    } else {
+        postContent.value = '';
+        fetchPosts();
+    }
+}
+
+async function fetchPosts() {
+    const { data, error } = await supabaseClient
+        .from('posts')
+        .select('content, created_at, user_id')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error al obtener posts:', error);
+    } else {
+        postsList.innerHTML = '';
+        data.forEach(post => {
+            const postElement = document.createElement('div');
+            postElement.classList.add('post');
+            postElement.innerHTML = `
+                <p class="post-content">${post.content}</p>
+                <p class="post-meta">Por: ${post.user_id} | ${formatDate(post.created_at)}</p>
+            `;
+            postsList.appendChild(postElement);
+        });
+    }
+}
+
+// Función para formatear fecha de manera más amigable
 function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -78,177 +167,43 @@ function formatDate(dateString) {
     return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
 }
 
-// Función para manejar el inicio de sesión/registro
-async function handleAuth(email, password) {
-    try {
-        if (isSignUp) {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password
-            });
-            
-            if (error) throw error;
-            
-            // Mostrar mensaje de verificación
-            authTitle.textContent = 'Verifica tu correo';
-            authForm.innerHTML = `
-                <p>Te hemos enviado un correo de verificación. Por favor, revisa tu bandeja de entrada y sigue las instrucciones.</p>
-                <button type="button" id="back-to-login">Volver al inicio de sesión</button>
-            `;
-            
-            document.getElementById('back-to-login').addEventListener('click', () => {
-                isSignUp = false;
-                authTitle.textContent = 'Iniciar Sesión';
-                authForm.innerHTML = `
-                    <input type="email" id="email" placeholder="Email" required>
-                    <input type="password" id="password" placeholder="Contraseña" required>
-                    <button type="submit" id="auth-submit">Entrar</button>
-                `;
-                toggleAuth.textContent = '¿No tienes cuenta? Regístrate';
-                
-                // Volver a añadir los event listeners
-                document.getElementById('email').addEventListener('input', updateAuthButton);
-                document.getElementById('password').addEventListener('input', updateAuthButton);
-                authForm.addEventListener('submit', handleAuthSubmit);
-            });
-        } else {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-            
-            if (error) throw error;
-            
-            currentUser = data.user;
-            userEmail.textContent = currentUser.email;
-            showAppSection();
-            loadPosts();
-        }
-    } catch (error) {
-        alert(error.message);
-    }
-}
-
-// Función para manejar el envío del formulario de autenticación
-async function handleAuthSubmit(e) {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    await handleAuth(email, password);
-}
-
-// Función para actualizar el texto del botón de autenticación
-function updateAuthButton() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    if (email && password) {
-        authSubmit.textContent = isSignUp ? 'Registrarse' : 'Iniciar Sesión';
+// 6. Lógica de UI
+function updateUI(user) {
+    currentUser = user;
+    if (user) {
+        authSection.classList.add('hidden');
+        appSection.classList.remove('hidden');
+        userEmailSpan.textContent = user.email;
+        fetchPosts();
     } else {
-        authSubmit.textContent = 'Completa los campos';
+        authSection.classList.remove('hidden');
+        appSection.classList.add('hidden');
     }
 }
 
-// Función para manejar el cierre de sesión
-async function handleLogout() {
-    await supabase.auth.signOut();
-    currentUser = null;
-    showAuthSection();
-}
-
-// Función para manejar el envío de un post
-async function handlePostSubmit(e) {
-    e.preventDefault();
-    const content = postContent.value.trim();
+// 7. Inicialización de la aplicación
+document.addEventListener('DOMContentLoaded', async () => {
+    // Primero procesar tokens en la URL
+    const sessionFromUrl = await processUrlTokens();
     
-    if (!content) return;
-    
-    try {
-        const { data, error } = await supabase
-            .from('posts')
-            .insert([
-                { 
-                    content, 
-                    user_email: currentUser.email,
-                    user_id: currentUser.id
-                }
-            ]);
-            
-        if (error) throw error;
-        
-        postContent.value = '';
-        loadPosts();
-    } catch (error) {
-        console.error('Error al publicar:', error.message);
-        alert('Error al publicar. Inténtalo de nuevo.');
+    // Si hay una sesión desde la URL, actualizar la UI
+    if (sessionFromUrl) {
+        updateUI(sessionFromUrl.user);
+        return;
     }
-}
+    
+    // Si no, verificar si hay una sesión activa
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    updateUI(session?.user ?? null);
+});
 
-// Función para verificar si hay una sesión activa al cargar la página
-async function checkSession() {
-    try {
-        // Verificar si hay parámetros de autenticación en la URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        
-        if (accessToken) {
-            // Si hay tokens en la URL, procesarlos
-            const { data, error } = await supabase.auth.getSession();
-            
-            if (error) throw error;
-            
-            if (data.session) {
-                currentUser = data.session.user;
-                userEmail.textContent = currentUser.email;
-                showAppSection();
-                loadPosts();
-                
-                // Limpiar la URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-                return;
-            }
-        }
-        
-        // Si no hay tokens en la URL, verificar si hay una sesión activa
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-            currentUser = session.user;
-            userEmail.textContent = currentUser.email;
-            showAppSection();
-            loadPosts();
-        } else {
-            showAuthSection();
-        }
-    } catch (error) {
-        console.error('Error al verificar sesión:', error.message);
-        showAuthSection();
-    }
-}
+// 8. Event Listeners
+authForm.addEventListener('submit', handleAuth);
+toggleAuth.addEventListener('click', toggleAuthMode);
+postForm.addEventListener('submit', createPost);
+logoutButton.addEventListener('click', handleLogout);
 
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-    // Verificar sesión al cargar la página
-    checkSession();
-    
-    // Event listeners para el formulario de autenticación
-    authForm.addEventListener('submit', handleAuthSubmit);
-    
-    // Event listeners para actualizar el botón de autenticación
-    document.getElementById('email').addEventListener('input', updateAuthButton);
-    document.getElementById('password').addEventListener('input', updateAuthButton);
-    
-    // Event listener para cambiar entre inicio de sesión y registro
-    toggleAuth.addEventListener('click', () => {
-        isSignUp = !isSignUp;
-        authTitle.textContent = isSignUp ? 'Registrarse' : 'Iniciar Sesión';
-        authSubmit.textContent = isSignUp ? 'Registrarse' : 'Iniciar Sesión';
-        toggleAuth.textContent = isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
-    });
-    
-    // Event listener para cerrar sesión
-    logoutButton.addEventListener('click', handleLogout);
-    
-    // Event listener para enviar posts
-    postForm.addEventListener('submit', handlePostSubmit);
+// 9. Escuchar cambios en el estado de autenticación
+supabaseClient.auth.onAuthStateChange((event, session) => {
+    updateUI(session?.user ?? null);
 });
