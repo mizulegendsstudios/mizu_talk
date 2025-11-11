@@ -2,7 +2,7 @@
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-222222?style=for-the-badge&logo=github&logoColor=white)](https://mizulegendsstudies.github.io/mizu_talk/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/es/docs/Web/JavaScript)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: AGPL](https://img.shields.io/badge/License-AGPL-green?style=for-the-badge)](https://opensource.org/licenses/AGPL)
 
 Una aplicación de micro-mensajes (estilo "mini-Twitter") construida 100% con tecnologías frontend. Demuestra cómo es posible crear una aplicación web full-stack funcional, con autenticación de usuarios y base de datos, sin escribir una sola línea de código de backend tradicional, gracias a Supabase.
 
