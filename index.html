@@ -3,60 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mizu Blog</title>
-    <!-- Enlaza a tu archivo CSS (ajusta el nombre si es diferente) -->
+    <title>Mini-Posts - Comparte tus ideas</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <!-- El contenedor de emojis se creará dinámicamente con JavaScript -->
-
+    
     <main>
-        <h1>El espacio donde tus ideas cobran vida</h1>
-        <p>Te damos la bienvenida a nuestra plataforma de microblogging. Aquí tus pensamientos encuentran audiencia y tus palabras crean comunidad. Mientras tanto, explora los posts de otros usuarios y prepárate para nuestro próximo lanzamiento: chat privado entre usuarios.</p>
+        <h1>Mini-Posts</h1>
+        <p>El espacio donde tus ideas cobran vida. Comparte tus pensamientos con nuestra comunidad y descubre las ideas de otros. Pronto podrás conectar directamente con otros usuarios a través de nuestro chat privado.</p>
 
-        <!-- Sección de información de usuario -->
-        <div class="user-info">
-            <span>👤 Usuario Ejemplo</span>
-            <span>usuario@ejemplo.com</span>
-        </div>
+        <!-- Sección de Autenticación -->
+        <section id="auth-section" class="hidden">
+            <h2 id="auth-title">Iniciar Sesión</h2>
+            <form id="auth-form">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Contraseña" required>
+                <button type="submit" id="auth-submit">Entrar</button>
+            </form>
+            <p id="toggle-auth">¿No tienes cuenta? Regístrate</p>
+        </section>
 
-        <!-- Formulario de ejemplo -->
-        <form>
-            <input type="text" placeholder="Título de tu post" required>
-            <textarea placeholder="¿Qué quieres compartir hoy?" required></textarea>
-            <button type="submit">Publicar</button>
-        </form>
-
-        <h2>Publicaciones Recientes</h2>
-
-        <!-- Ejemplo de un post -->
-        <article class="post">
-            <div class="post-content">
-                <p>¡El diseño web moderno es fascinante! Combinar estilos como glassmorphism con animaciones sutiles crea una experiencia de usuario única.</p>
+        <!-- Sección de la App (para usuarios logueados) -->
+        <section id="app-section" class="hidden">
+            <div class="user-info">
+                <span id="user-email"></span>
+                <button id="logout-button">Cerrar Sesión</button>
             </div>
-            <div class="post-meta">
-                Publicado hace 5 minutos
-            </div>
-        </article>
 
-        <!-- Otro ejemplo de post -->
-        <article class="post">
-            <div class="post-content">
-                <p>Los emojis en el fondo añaden un toque divertido y dinámico sin distraer del contenido principal. ¿No te parece genial?</p>
-            </div>
-            <div class="post-meta">
-                Publicado hace 1 hora
-            </div>
-        </article>
+            <form id="post-form">
+                <textarea id="post-content" placeholder="¿Qué estás pensando?" maxlength="200" required></textarea>
+                <button type="submit">Publicar</button>
+            </form>
 
-        <!-- Elemento oculto de ejemplo -->
-        <div class="hidden">
-            <p>Este contenido está oculto por defecto.</p>
-        </div>
+            <div id="posts-container">
+                <h2>Posts Recientes</h2>
+                <div id="posts-list"></div>
+            </div>
+        </section>
+
     </main>
 
+    <!-- SDK de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <!-- Script para el fondo animado -->
     <script src="src/animation/main_wallpaper.js"></script>
+    <!-- Nuestro script -->
+    <script src="app.js"></script>
 </body>
 </html>
