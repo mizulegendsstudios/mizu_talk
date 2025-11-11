@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Autenticando...</title>
+</head>
+<body>
+    <p>Redirigiendo, por favor espera...</p>
+    <script>
+        // La URL del hash contiene los tokens de acceso (ej: #access_token=...)
+        const hash = window.location.hash;
+
+        // Redirigimos al usuario a la página principal de la app,
+        // manteniendo el hash con los tokens.
+        window.location.href = '/mizu_talk/' + hash;
+    </script>
+</body>
+</html>
