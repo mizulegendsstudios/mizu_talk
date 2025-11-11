@@ -2,11 +2,9 @@
 // Reemplaza con tu URL y tu clave anónima de Supabase
 const SUPABASE_URL = 'https://vicmgzclxyfjrlzgasqn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY21nemNseHlmanJsemdhc3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MDA5ODAsImV4cCI6MjA3ODM3Njk4MH0.CuCN5Zd-tGlSlMN0amFN4hh_LwCioVrL0RGse7r0oCo';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- PUNTO CLAVE ---
-// Usamos el objeto global 'supabase' (del CDN) para crear nuestra instancia,
-// y la guardamos en una variable llamada 'supabaseClient'.
+// --- ÚNICA Y CORRECTA DECLARACIÓN DEL CLIENTE DE SUPABASE ---
+// No debe haber otra línea como esta en todo el archivo.
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2. Referencias a elementos del DOM
@@ -32,12 +30,10 @@ async function handleAuth(event) {
     const password = document.getElementById('password').value;
 
     if (isSignUpMode) {
-        // Usamos 'supabaseClient' aquí
         const { data, error } = await supabaseClient.auth.signUp({ email, password });
         if (error) alert(error.message);
         else alert('Registro exitoso! Revisa tu email para confirmar.');
     } else {
-        // Usamos 'supabaseClient' aquí
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) alert(error.message);
     }
@@ -51,7 +47,6 @@ function toggleAuthMode() {
 }
 
 async function handleLogout() {
-    // Usamos 'supabaseClient' aquí
     const { error } = await supabaseClient.auth.signOut();
     if (error) alert(error.message);
 }
@@ -63,7 +58,6 @@ async function createPost(event) {
 
     if (!content.trim()) return;
 
-    // Usamos 'supabaseClient' aquí
     const { error } = await supabaseClient
         .from('posts')
         .insert({ content, user_id: currentUser.id });
@@ -73,12 +67,11 @@ async function createPost(event) {
         alert('No se pudo publicar.');
     } else {
         postContent.value = '';
-        fetchPosts(); // Recargar los posts
+        fetchPosts();
     }
 }
 
 async function fetchPosts() {
-    // Usamos 'supabaseClient' aquí
     const { data, error } = await supabaseClient
         .from('posts')
         .select('content, created_at, user_id')
@@ -87,7 +80,7 @@ async function fetchPosts() {
     if (error) {
         console.error('Error al obtener posts:', error);
     } else {
-        postsList.innerHTML = ''; // Limpiar la lista
+        postsList.innerHTML = '';
         data.forEach(post => {
             const postElement = document.createElement('div');
             postElement.classList.add('post');
@@ -100,7 +93,7 @@ async function fetchPosts() {
     }
 }
 
-// 5. Lógica de UI (mostrar/ocultar secciones)
+// 5. Lógica de UI
 function updateUI(user) {
     currentUser = user;
     if (user) {
@@ -121,8 +114,6 @@ postForm.addEventListener('submit', createPost);
 logoutButton.addEventListener('click', handleLogout);
 
 // 7. Comprobar el estado de la autenticación al cargar la página
-// --- ¡LA LÍNEA QUE ESTABA FALLANDO! ---
-// Usamos 'supabaseClient' aquí también.
 supabaseClient.auth.onAuthStateChange((event, session) => {
     updateUI(session?.user ?? null);
 });
